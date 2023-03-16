@@ -47,6 +47,8 @@ class PrivateKey {
    */
   PlainText decrypt(const CipherText& ciphertext) const;
 
+  void decrypt2(const CipherText& ciphertext, void** destination) const;
+
   const void* addr = static_cast<const void*>(this);
 
   /**

@@ -11,6 +11,10 @@
 #include "ipcl/pub_key.hpp"
 #include "ipcl/utils/util.hpp"
 
+#include "defines.h"
+#include "ipcl/utils/util.hpp"
+
+
 namespace ipcl {
 
 class CipherText : public BaseText {

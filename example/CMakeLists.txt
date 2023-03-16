@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(IPCL 2.0.0 REQUIRED HINTS ${IPCL_HINT_DIR})
 
-set(examples encrypt_decrypt add_mul hybridmode)
+set(examples c_add_mul c_encrypt_decrypt encrypt_decrypt c_se_de se_de add_mul hybridmode)
 
 add_custom_target(run_all_examples)
 

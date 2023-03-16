@@ -162,3 +162,48 @@ std::vector<BigNumber> CipherText::raw_mul(
 }
 
 }  // namespace ipcl
+
+#include "ipcl/ciphertext_c.h"
+
+PAILLIER_C_FUNC CipherText_Create1(void **ciphertext) 
+{
+  IfNullRet(ciphertext, E_POINTER);
+  ipcl::CipherText *cipher = new ipcl::CipherText();
+  *ciphertext = cipher;
+
+  return S_OK;
+}
+
+PAILLIER_C_FUNC CipherText_Destroy(void *thisptr)
+{
+  ipcl::CipherText *cipher = ipcl::FromVoid<ipcl::CipherText>(thisptr);
+  IfNullRet(cipher, E_POINTER);
+
+  delete cipher;
+  return S_OK;
+}
+
+
+PAILLIER_C_FUNC CipherText_SaveSize(void *thisptr, size_t *result) {
+  ipcl::CipherText *cipher = ipcl::FromVoid<ipcl::CipherText>(thisptr);
+  IfNullRet(cipher, E_POINTER);
+  IfNullRet(result, E_POINTER);
+
+  *result = (*cipher).getSize();
+  return S_OK;
+}
+
+PAILLIER_C_FUNC CipherText_Save(void *thisptr, uint32_t *outptr, size_t size, size_t *out_len) {
+  if (*out_len != 0) { return E_INVALIDARG; }
+
+  ipcl::CipherText *cipher = ipcl::FromVoid<ipcl::CipherText>(thisptr);
+  IfNullRet(cipher, E_POINTER);
+  for (int i = 0; i < size; i ++) {
+    std::vector<uint32_t> v = (*cipher).getElementVec(i);
+    *outptr = v[0];
+    outptr += 1;
+    *out_len = *out_len + 1;
+  }
+  
+  return S_OK;
+}

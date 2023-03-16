@@ -13,6 +13,9 @@
 #include "ipcl/mod_exp.hpp"
 #include "ipcl/utils/util.hpp"
 
+#include <cereal/archives/json.hpp>
+#include <fstream>
+
 namespace ipcl {
 
 PublicKey::PublicKey(const BigNumber& n, int bits, bool enableDJN_)
@@ -129,6 +132,38 @@ CipherText PublicKey::encrypt(const PlainText& pt, bool make_secure) const {
   return CipherText(*this, ct_bn_v);
 }
 
+void PublicKey::encrypt2(const PlainText& pt, void** destination, bool make_secure) const {
+  ERROR_CHECK(m_isInitialized, "encrypt: Public key is NOT initialized.");
+
+  std::size_t pt_size = pt.getSize();
+  ERROR_CHECK(pt_size > 0, "encrypt: Cannot encrypt empty PlainText");
+  std::vector<BigNumber> ct_bn_v(pt_size);
+
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (pt_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_ENCRYPT;
+    setHybridRatio(qat_ratio, false);
+  }
+
+  ct_bn_v = raw_encrypt(pt.getTexts(), make_secure);
+  CipherText * ciphertext = new CipherText(*this, ct_bn_v);
+  *destination = ciphertext;
+}
+
+void PublicKey::save_to_file(const char* file, unsigned int version) const {
+  std::ofstream os(file);
+  cereal::JSONOutputArchive archive(os); // Create an output archive
+  (*this).save(archive, version);
+}
+
+void PublicKey::load_from_file(const char* file, unsigned int version) const {
+  std::ifstream is(file);
+  cereal::JSONInputArchive archive(is); // Create an input archive
+  (*this).load(archive, version);
+}
+
 void PublicKey::setDJN(const BigNumber& hs, int randbit) {
   if (m_enable_DJN) return;
 
@@ -138,7 +173,7 @@ void PublicKey::setDJN(const BigNumber& hs, int randbit) {
 }
 
 void PublicKey::create(const BigNumber& n, int bits, bool enableDJN_) {
-  m_n = std::make_shared<BigNumber>(n);
+  // m_n = std::make_shared<BigNumber>(n);  // We've already altered m_n.
   m_g = std::make_shared<BigNumber>(*m_n + 1);
   m_nsquare = std::make_shared<BigNumber>((*m_n) * (*m_n));
   m_bits = bits;

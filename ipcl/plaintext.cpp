@@ -4,6 +4,7 @@
 #include "ipcl/plaintext.hpp"
 
 #include <algorithm>
+#include <vector>
 
 #include "ipcl/ciphertext.hpp"
 #include "ipcl/utils/util.hpp"
@@ -73,3 +74,57 @@ PlainText PlainText::rotate(int shift) const {
 }
 
 }  // namespace ipcl
+
+#include "ipcl/plaintext_c.h"
+
+PAILLIER_C_FUNC PlainText_Create1(void **plaintext) 
+{
+  IfNullRet(plaintext, E_POINTER);
+  ipcl::PlainText *plain = new ipcl::PlainText();
+  *plaintext = plain;
+
+  return S_OK;
+}
+
+PAILLIER_C_FUNC PlainText_Create2(void **plaintext, uint32_t *input, int len) 
+{
+  IfNullRet(plaintext, E_POINTER);
+  std::vector<uint32_t> n(input, input + len);
+  ipcl::PlainText *plain = new ipcl::PlainText(n);
+  *plaintext = plain;
+
+  return S_OK;
+}
+
+PAILLIER_C_FUNC PlainText_Destroy(void *thisptr)
+{
+  ipcl::PlainText *plain = ipcl::FromVoid<ipcl::PlainText>(thisptr);
+  IfNullRet(plain, E_POINTER);
+
+  delete plain;
+  return S_OK;
+}
+
+PAILLIER_C_FUNC PlainText_SaveSize(void *thisptr, size_t *result) {
+  ipcl::PlainText *plain = ipcl::FromVoid<ipcl::PlainText>(thisptr);
+  IfNullRet(plain, E_POINTER);
+  IfNullRet(result, E_POINTER);
+
+  *result = (*plain).getSize();
+  return S_OK;
+}
+
+PAILLIER_C_FUNC PlainText_Save(void *thisptr, uint32_t *outptr, size_t size, size_t *out_len) {
+  if (*out_len != 0) { return E_INVALIDARG; }
+
+  ipcl::PlainText *plain = ipcl::FromVoid<ipcl::PlainText>(thisptr);
+  IfNullRet(plain, E_POINTER);
+  for (int i = 0; i < size; i ++) {
+    std::vector<uint32_t> v = (*plain).getElementVec(i);
+    *outptr = v[0];
+    outptr += 1;
+    *out_len = *out_len + 1;
+  }
+  
+  return S_OK;
+}

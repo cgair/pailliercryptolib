@@ -101,6 +101,34 @@ PlainText PrivateKey::decrypt(const CipherText& ct) const {
   return PlainText(pt_bn);
 }
 
+void PrivateKey::decrypt2(const CipherText& ct, void** destination) const {
+  ERROR_CHECK(m_isInitialized, "decrypt: Private key is NOT initialized.");
+  ERROR_CHECK(*(ct.getPubKey()->getN()) == *(this->getN()),
+              "decrypt: The value of N in public key mismatch.");
+
+  std::size_t ct_size = ct.getSize();
+  ERROR_CHECK(ct_size > 0, "decrypt: Cannot decrypt empty CipherText");
+
+  std::vector<BigNumber> pt_bn(ct_size);
+  std::vector<BigNumber> ct_bn = ct.getTexts();
+
+  // If hybrid OPTIMAL mode is used, use a special ratio
+  if (isHybridOptimal()) {
+    float qat_ratio = (ct_size <= IPCL_WORKLOAD_SIZE_THRESHOLD)
+                          ? IPCL_HYBRID_MODEXP_RATIO_FULL
+                          : IPCL_HYBRID_MODEXP_RATIO_DECRYPT;
+    setHybridRatio(qat_ratio, false);
+  }
+
+  if (m_enable_crt)
+    decryptCRT(pt_bn, ct_bn);
+  else
+    decryptRAW(pt_bn, ct_bn);
+
+  PlainText *plaintext = new PlainText(pt_bn);
+  *destination = plaintext;
+}
+
 void PrivateKey::decryptRAW(std::vector<BigNumber>& plaintext,
                             const std::vector<BigNumber>& ciphertext) const {
   std::size_t v_size = plaintext.size();

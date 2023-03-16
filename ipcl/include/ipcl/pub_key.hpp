@@ -59,6 +59,20 @@ class PublicKey {
    */
   CipherText encrypt(const PlainText& plaintext, bool make_secure = true) const;
 
+  void encrypt2(const PlainText& plaintext, void** destination, bool make_secure = true) const;
+
+  /**
+  Saves the PublicKey to a given location. The output file is in json
+  format and human-readable.
+
+  @param[out] out The memory location to write the PublicKey to
+  @throws std::runtime_error if I/O operations failed (TODO: catch this)
+  */
+  void save_to_file(const char* file, unsigned int version) const;
+
+  // TODO(cgair): load directly from a memory location.
+  void load_from_file(const char* file, unsigned int version) const;
+
   /**
    * Get N of public key in paillier scheme
    */
@@ -133,29 +147,28 @@ class PublicKey {
   friend class cereal::access;
   template <class Archive>
   void save(Archive& ar, const Ipp32u version) const {
+    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", m_bits));
     ar(::cereal::make_nvp("enable_DJN", m_enable_DJN));
-    ar(::cereal::make_nvp("randbits", m_randbits));
-    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("hs", m_hs));
+    ar(::cereal::make_nvp("randbits", m_randbits));
   }
 
   template <class Archive>
   void load(Archive& ar, const Ipp32u version) {
+    BigNumber n, hs;
     bool enable_DJN;
     int bits, randbits;
+
+    ar(::cereal::make_nvp("n", *m_n));
     ar(::cereal::make_nvp("bits", bits));
     ar(::cereal::make_nvp("enable_DJN", enable_DJN));
+    ar(::cereal::make_nvp("hs", m_hs));
     ar(::cereal::make_nvp("randbits", randbits));
-
-    std::vector<Ipp32u> n_v, hs_v;
-    ar(::cereal::make_nvp("n", n_v));
-    ar(::cereal::make_nvp("hs", hs_v));
-
     if (enable_DJN)
-      create(n_v.data(), bits, hs_v.data(), randbits);
+      create(n, bits, hs, randbits);
     else
-      create(n_v.data(), bits);
+      create(n, bits);
   }
 
   bool m_isInitialized = false;

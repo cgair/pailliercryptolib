@@ -114,6 +114,16 @@ class OMPUtilities {
 
 #endif  // IPCL_USE_OMP
 
+/**
+Return a pointer of the given type from a void pointer.
+*/
+template <class T>
+inline T *FromVoid(void *voidptr)
+{
+    T *result = reinterpret_cast<T *>(voidptr);
+    return result;
+}
+
 }  // namespace ipcl
 
 #endif  // IPCL_INCLUDE_IPCL_UTILS_UTIL_HPP_

@@ -9,6 +9,7 @@
 #include "ipcl/utils/context.hpp"
 #include "ipcl/utils/serialize.hpp"
 
+
 namespace ipcl {
 
 /**
@@ -17,6 +18,11 @@ namespace ipcl {
  * sk: paillier private key
  */
 struct KeyPair {
+  KeyPair(PublicKey pub_key, PrivateKey priv_key) {
+    this->pub_key = pub_key;
+    this->priv_key = priv_key;
+  };
+
   PublicKey pub_key;
   PrivateKey priv_key;
 };

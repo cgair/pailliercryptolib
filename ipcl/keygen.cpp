@@ -117,3 +117,41 @@ KeyPair generateKeypair(int64_t n_length, bool enable_DJN) {
 }
 
 }  // namespace ipcl
+
+#include "ipcl/ipcl_c.h"
+
+using namespace ipcl;
+
+PAILLIER_C_FUNC KeyPair_Create(int64_t n_length, bool enable_DJN, void **keypair) 
+{
+  IfNullRet(keypair, E_POINTER);
+  try 
+  {
+    ERROR_CHECK(
+        n_length <= N_BIT_SIZE_MAX,
+        "generateKeyPair: modulus size in bits should belong to either 1Kb, 2Kb, "
+        "3Kb or 4Kb range only, key size exceed the range!!!");
+    ERROR_CHECK((n_length >= N_BIT_SIZE_MIN) && (n_length % 4 == 0),
+                "generateKeyPair: key size should >=200, and divisible by 4");
+
+    BigNumber ref_dist = getPrimeDistance(n_length);
+
+    BigNumber p, q, n;
+
+    if (enable_DJN)
+      getDJNBN(n_length, p, q, n, ref_dist);
+    else
+      getNormalBN(n_length, p, q, n, ref_dist);
+
+    PublicKey pk(n, n_length, enable_DJN);
+    PrivateKey sk(pk, p, q);
+    KeyPair *key = new KeyPair(pk, sk);
+    *keypair = key;
+
+    return S_OK;
+  }
+  catch (const std::invalid_argument &)
+  {
+      return E_INVALIDARG;
+  }
+}
