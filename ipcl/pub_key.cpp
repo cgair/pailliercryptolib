@@ -152,13 +152,13 @@ void PublicKey::encrypt2(const PlainText& pt, void** destination, bool make_secu
   *destination = ciphertext;
 }
 
-void PublicKey::save_to_file(const char* file, unsigned int version) const {
+void PublicKey::save_to_file(const char* file, unsigned int version) {
   std::ofstream os(file);
   cereal::JSONOutputArchive archive(os); // Create an output archive
   (*this).save(archive, version);
 }
 
-void PublicKey::load_from_file(const char* file, unsigned int version) const {
+void PublicKey::load_from_file(const char* file, unsigned int version) {
   std::ifstream is(file);
   cereal::JSONInputArchive archive(is); // Create an input archive
   (*this).load(archive, version);
@@ -194,7 +194,7 @@ void PublicKey::create(const BigNumber& n, int bits, const BigNumber& hs,
                        int randbits) {
   create(n, bits, false);  // set DJN to false and manually set
   m_enable_DJN = true;
-  // m_hs = hs;
+  m_hs = hs;
   m_randbits = randbits;
 }
 

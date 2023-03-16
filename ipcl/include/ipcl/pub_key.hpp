@@ -68,10 +68,10 @@ class PublicKey {
   @param[out] out The memory location to write the PublicKey to
   @throws std::runtime_error if I/O operations failed (TODO: catch this)
   */
-  void save_to_file(const char* file, unsigned int version) const;
+  void save_to_file(const char* file, unsigned int version);
 
   // TODO(cgair): load directly from a memory location.
-  void load_from_file(const char* file, unsigned int version) const;
+  void load_from_file(const char* file, unsigned int version);
 
   /**
    * Get N of public key in paillier scheme
