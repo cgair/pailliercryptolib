@@ -194,7 +194,7 @@ void PublicKey::create(const BigNumber& n, int bits, const BigNumber& hs,
                        int randbits) {
   create(n, bits, false);  // set DJN to false and manually set
   m_enable_DJN = true;
-  m_hs = hs;
+  // m_hs = hs;
   m_randbits = randbits;
 }
 
