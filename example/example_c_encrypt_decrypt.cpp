@@ -17,6 +17,8 @@
 #include "ipcl/utils/util.hpp"
 #include "ipcl/defines.h"
 
+#include "ipcl/ciphertext_c.h"
+#include "ipcl/plaintext_c.h"
 #include "ipcl/ipcl_c.h"
 
 #include <cereal/archives/json.hpp>
@@ -64,6 +66,46 @@ int main() {
 
   ipcl::CipherText ct = key->pub_key.encrypt(pt);
   ipcl::PlainText dt = key->priv_key.decrypt(ct);
+
+  /* PlainText -> CipherText -> vector<uint32> -> CipherText -> PlainText */
+  uint32_t n2[1] = {1};
+
+  ipcl::PlainText pt_n2 = ipcl::PlainText(n2);
+  std::vector<uint32_t> pp = pt_n2.getElementVec(0);
+  std::cout << "To be encrypted: " << pp[0] << std::endl;
+
+  ipcl::CipherText ct_n2 = key->pub_key.encrypt(pt_n2);
+
+  ipcl::PlainText res = key->priv_key.decrypt(ct_n2);
+  std::vector<uint32_t> ret = res.getElementVec(0);
+  std::cout << "Decrypt result1: " << ret[0] << std::endl;
+
+  std::vector<uint32_t> ct_v1 = ct_n2.getElementVec(0);
+  uint32_t n3[1] = {ct_v1[0]};
+  std::cout << " Before: " << n3[0];
+  std::cout << std::endl;
+
+  void *c = NULL;
+  void **ciphertext = &c;
+  long ret2 = CipherText_Create2(*keypair, ciphertext, n3, 1);
+  assert (ret2 == 0);
+
+  ipcl::CipherText *ct_n3 = ipcl::FromVoid<ipcl::CipherText>(*ciphertext);
+  std::vector<uint32_t> ct_v3 = ct_n3->getElementVec(0);
+  std::cout << "After: " << ct_v3[0];
+  std::cout << std::endl;
+
+  void *pr = NULL;
+  void **plaintext_res = &pr;
+  long ret3 = PlainText_Create1(plaintext_res);
+  assert (ret3 == 0);
+  /* Do Decryption */
+  long ret4 = KeyPair_Decrypt(*keypair, *ciphertext, plaintext_res);
+  assert (ret4 == 0);
+  ipcl::PlainText *pt_n3 = ipcl::FromVoid<ipcl::PlainText>(*plaintext_res);
+
+  std::vector<uint32_t> rett = pt_n3->getElementVec(0);
+  std::cout << "Decrypt result2: " << rett[0] << std::endl;
 
   ipcl::setHybridOff();
 

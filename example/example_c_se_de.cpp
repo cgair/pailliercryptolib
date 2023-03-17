@@ -35,7 +35,8 @@ int main() {
   /* KeyPair_Create */
   void *k1 = NULL;
   void **keypair1 = &k1;
-  long ret1 = KeyPair_Create(2048, true, keypair1);
+  // long ret1 = KeyPair_Create(2048, true, keypair1);
+  long ret1 = KeyPair_Create(2048, false, keypair1);
   assert (ret1 == 0);
 
   ipcl::KeyPair *key1 = ipcl::FromVoid<ipcl::KeyPair>(*keypair1);
@@ -46,10 +47,12 @@ int main() {
   {
     void *k2 = NULL;
     void **keypair2 = &k2;
-    long ret2 = KeyPair_Create(2048, true, keypair2);
+    // long ret2 = KeyPair_Create(2048, true, keypair2);
+    long ret2 = KeyPair_Create(2048, false, keypair2);
     assert (ret2 == 0);
 
     PubKey_Load(*keypair2, "key1.json", 0);
+    PubKey_Save(*keypair2, "key2.json", 0);
 
     ipcl::KeyPair *key2 = ipcl::FromVoid<ipcl::KeyPair>(*keypair2);
 
