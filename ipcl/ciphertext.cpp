@@ -8,6 +8,9 @@
 #include "ipcl/mod_exp.hpp"
 #include "ipcl/ipcl.hpp"
 
+#include <cereal/archives/json.hpp>
+#include <fstream>
+
 namespace ipcl {
 CipherText::CipherText(const PublicKey& pk, const uint32_t& n)
     : BaseText(n), m_pk(std::make_shared<PublicKey>(pk)) {}
@@ -175,19 +178,6 @@ PAILLIER_C_FUNC CipherText_Create1(void **ciphertext)
   return S_OK;
 }
 
-PAILLIER_C_FUNC CipherText_Create2(void *keypair, void **ciphertext, uint32_t *input, int len) 
-{
-  ipcl::KeyPair *key = ipcl::FromVoid<ipcl::KeyPair>(keypair);
-  IfNullRet(key, E_POINTER);
-  IfNullRet(ciphertext, E_POINTER);
-  std::vector<uint32_t> n(input, input + len);
-
-  ipcl::CipherText *cipher = new ipcl::CipherText(key->pub_key, n);
-  *ciphertext = cipher;
-
-  return S_OK;
-}
-
 PAILLIER_C_FUNC CipherText_Destroy(void *thisptr)
 {
   ipcl::CipherText *cipher = ipcl::FromVoid<ipcl::CipherText>(thisptr);
@@ -221,3 +211,45 @@ PAILLIER_C_FUNC CipherText_Save(void *thisptr, uint32_t *outptr, size_t size, si
   
   return S_OK;
 }
+
+PAILLIER_C_FUNC CipherText_Save2(void *thisptr, const char* file, unsigned int version) {
+  ipcl::CipherText *cipher = ipcl::FromVoid<ipcl::CipherText>(thisptr);
+  IfNullRet(cipher, E_POINTER);
+
+  try 
+  {
+    // NOTE: only support a number.
+    BigNumber ct_bg = cipher->getElement(0);
+    std::ofstream os(file);
+    cereal::JSONOutputArchive archive(os); // Create an output archive 
+    ct_bg.save(archive, version);
+    return S_OK;
+  }
+  catch (const std::runtime_error &)
+  {
+    return COR_E_IO;
+  }
+}
+
+PAILLIER_C_FUNC CipherText_Load2(void *key, void **ciphertext, const char* file, unsigned int version) {
+  ipcl::KeyPair *keypair = ipcl::FromVoid<ipcl::KeyPair>(key);
+  IfNullRet(keypair, E_POINTER);
+  IfNullRet(ciphertext, E_POINTER);
+
+  try 
+  {
+    std::ifstream is(file);
+    cereal::JSONInputArchive archive(is); // Create an input archive
+    BigNumber bg = BigNumber();
+    bg.load(archive, version);
+
+    ipcl::CipherText * ct = new ipcl::CipherText(keypair->pub_key, bg);
+    *ciphertext = ct;
+    return S_OK;
+  }
+  catch (const std::runtime_error &)
+  {
+    return COR_E_IO;
+  }
+}
+

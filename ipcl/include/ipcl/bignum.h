@@ -128,7 +128,7 @@ class BigNumber : public ipcl::serializer::serializerBase {
   static bool toBin(unsigned char* data, int len, const BigNumber& bn);
   static bool toBin(unsigned char** data, int* len, const BigNumber& bn);
 
- protected:
+//  protected:
   // friend class cereal::access;
   // template <class Archive>
   // void save(Archive& ar, const Ipp32u version) const {
