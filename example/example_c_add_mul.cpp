@@ -65,69 +65,129 @@ int add_mul() {
   std::cout << "Example: Addition and Multiplication with IPCL" << std::endl;
   std::cout << "==============================================" << std::endl;
 
-  ipcl::initializeContext("QAT");
+  ipcl::initializeContext("default");
 
-  uint32_t x, y;
-  x = 5;
-  y = 8;
+  const uint32_t num_total = 1;
 
-  ipcl::KeyPair key = ipcl::generateKeypair(2048, true);
+  // Generate keys
+  void *k = NULL;
+  void **keypair = &k;
+  long ret1 = KeyPair_Create(2048, true, keypair);
+  assert (ret1 == 0);
+  ipcl::KeyPair *key = ipcl::FromVoid<ipcl::KeyPair>(*keypair);
 
-  ipcl::PlainText pt_x = ipcl::PlainText(x);
-  ipcl::PlainText pt_y = ipcl::PlainText(y);
+  void *px = NULL;
+  void *py = NULL;
+  void **plaintext_x = &px;
+  void **plaintext_y = &py;
+  uint32_t x[num_total] = {10};
+  uint32_t y[num_total] = {20};
 
-  ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  long ret2 = PlainText_Create2(plaintext_x, x, num_total);
+  assert (ret2 == 0);
+  long ret3 = PlainText_Create2(plaintext_y, y, num_total);
+  assert (ret3 == 0);
 
-  ipcl::CipherText ct_x = key.pub_key.encrypt(pt_x);
-  ipcl::CipherText ct_y = key.pub_key.encrypt(pt_y);
+  void *cx = NULL;
+  void *cy = NULL;
+  void **ciphertext_x = &cx;
+  void **ciphertext_y = &cy;
 
-  // Perform enc(x) + enc(y)
-  std::cout << "--- IPCL CipherText + CipherText ---" << std::endl;
-  ipcl::CipherText ct_add_ctx_cty = ct_x + ct_y;
-  ipcl::PlainText dt_add_ctx_cty = key.priv_key.decrypt(ct_add_ctx_cty);
+  long ret4 = CipherText_Create1(ciphertext_x);
+  assert (ret4 == 0);
+  long ret5 = CipherText_Create1(ciphertext_y);
+  assert (ret5 == 0);
+
+  // ipcl::setHybridMode(ipcl::HybridMode::OPTIMAL);
+  long ret6 = KeyPair_Encrypt(*keypair, *plaintext_x, ciphertext_x);
+  assert (ret6 == 0);
+  long ret7 = KeyPair_Encrypt(*keypair, *plaintext_y, ciphertext_y);
+  assert (ret7 == 0);
+
+  void *res1 = NULL;
+  void **result1 = &res1;
+  long ret8 = CipherText_Create1(result1);
+  assert (ret8 == 0);
+
+  long ret9 = Paillier_Add(*ciphertext_x, *ciphertext_y, *result1);
+  assert (ret9 == 0);
+
+
+  void *pr1 = NULL;
+  void **plaintext_ret1 = &pr1;
+  long ret88 = PlainText_Create1(plaintext_ret1);
+  assert (ret88 == 0);
+  long ret99 = KeyPair_Decrypt(*keypair, *result1, plaintext_ret1);
+  assert (ret99 == 0);
+  ipcl::PlainText *sum1 = ipcl::FromVoid<ipcl::PlainText>(*plaintext_ret1);
 
   // verify result
   bool verify = true;
-  std::vector<uint32_t> v0 = dt_add_ctx_cty.getElementVec(0);
-  if (v0[0] != (x + y)) {
+  std::vector<uint32_t> v = (*sum1).getElementVec(0);
+  std::cout << v[0] << std::endl;
+  if (v[0] != (x[0] + y[0])) {
     verify = false;
   }
-
   std::cout << "Test (x + y) == dec(enc(x) + enc(y)) -- "
             << (verify ? "pass" : "fail") << std::endl
             << std::endl;
 
-  // Perform enc(x) + y
-  std::cout << "--- IPCL CipherText + PlainText ---" << std::endl;
-  ipcl::CipherText ct_add_ctx_pty = ct_x + pt_y;
-  ipcl::PlainText dt_add_ctx_pty = key.priv_key.decrypt(ct_add_ctx_pty);
+  void *res2 = NULL;
+  void **result2 = &res2;
+  long ret10 = CipherText_Create1(result2);
+  assert (ret10 == 0);
+
+  long ret11 = Paillier_Add2(*ciphertext_x, *plaintext_y, *result2);
+  assert (ret11 == 0);
+
+  void *pr2 = NULL;
+  void **plaintext_ret2 = &pr2;
+  long ret100 = PlainText_Create1(plaintext_ret2);
+  assert (ret100 == 0);
+  long ret110 = KeyPair_Decrypt(*keypair, *result2, plaintext_ret2);
+  assert (ret110 == 0);
+  ipcl::PlainText *sum2 = ipcl::FromVoid<ipcl::PlainText>(*plaintext_ret2);
 
   // verify result
   verify = true;
-  std::vector<uint32_t> v1 = dt_add_ctx_cty.getElementVec(0);
-  if (v1[0] != (x + y)) {
+  std::vector<uint32_t> vv = (*sum2).getElementVec(0);
+  std::cout << vv[0] << std::endl;
+  if (vv[0] != (x[0] + y[0])) {
     verify = false;
   }
   std::cout << "Test (x + y) == dec(enc(x) + y) -- "
             << (verify ? "pass" : "fail") << std::endl
             << std::endl;
 
-  // Perform enc(x) * y
-  std::cout << "--- IPCL CipherText * PlainText ---" << std::endl;
-  ipcl::CipherText ct_mul_ctx_pty = ct_x * pt_y;
-  ipcl::PlainText dt_mul_ctx_pty = key.priv_key.decrypt(ct_mul_ctx_pty);
+  void *res3 = NULL;
+  void **result3 = &res3;
+  long ret12 = CipherText_Create1(result3);
+  assert (ret12 == 0);
+
+  long ret13 = Paillier_Multiply(*ciphertext_x, *plaintext_y, *result3);
+  assert (ret13 == 0);
+
+  void *pr3 = NULL;
+  void **plaintext_ret3 = &pr3;
+  long ret120 = PlainText_Create1(plaintext_ret3);
+  assert (ret120 == 0);
+  long ret130 = KeyPair_Decrypt(*keypair, *result3, plaintext_ret3);
+  assert (ret130 == 0);
+  ipcl::PlainText *mul = ipcl::FromVoid<ipcl::PlainText>(*plaintext_ret3);
+
 
   // verify result
   verify = true;
-  std::vector<uint32_t> v2 = dt_add_ctx_cty.getElementVec(0);
-  if (v2[0] != (x + y)) {
+  std::vector<uint32_t> vvv = (*mul).getElementVec(0);
+  std::cout << vvv[0] << std::endl;
+  if (vvv[0] != (x[0] * y[0])) {
     verify = false;
   }
-
   std::cout << "Test (x * y) == dec(enc(x) * y) -- "
-            << (verify ? "pass" : "fail") << std::endl;
+            << (verify ? "pass" : "fail") << std::endl
+            << std::endl;
 
-  ipcl::setHybridOff();
+  // ipcl::setHybridOff();
 
   ipcl::terminateContext();
   std::cout << "Complete!" << std::endl;
@@ -368,9 +428,9 @@ int functinality() {
 
 #include <algorithm>
 int main() {
-  // add_mul();
   // plaintext_create();
+  add_mul();
 
   // complet_flow();
-  functinality();
+  // functinality();
 }

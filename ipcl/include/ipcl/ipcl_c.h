@@ -115,3 +115,31 @@ PAILLIER_C_FUNC Paillier_Add(void *lhs, void *rhs, void *destination)
   *destinationptr = *left + *right;
   return S_OK;
 }
+
+// Perform enc(x) + y
+PAILLIER_C_FUNC Paillier_Add2(void *lhs, void *rhs, void *destination) 
+{
+  CipherText *left = FromVoid<CipherText>(lhs);
+  IfNullRet(left, E_POINTER);
+  PlainText *right = FromVoid<PlainText>(rhs);
+  IfNullRet(right, E_POINTER);
+  CipherText *destinationptr = FromVoid<CipherText>(destination);
+  IfNullRet(destinationptr, E_POINTER);
+
+  *destinationptr = *left + *right;
+  return S_OK;
+}
+
+// Perform enc(x) * y
+PAILLIER_C_FUNC Paillier_Multiply(void *lhs, void *rhs, void *destination) 
+{
+  CipherText *left = FromVoid<CipherText>(lhs);
+  IfNullRet(left, E_POINTER);
+  PlainText *right = FromVoid<PlainText>(rhs);
+  IfNullRet(right, E_POINTER);
+  CipherText *destinationptr = FromVoid<CipherText>(destination);
+  IfNullRet(destinationptr, E_POINTER);
+
+  *destinationptr = *left * *right;
+  return S_OK;
+}
